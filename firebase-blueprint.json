@@ -1,0 +1,122 @@
+{
+  "entities": {
+    "Event": {
+      "title": "Event Definition",
+      "description": "An event being organized for students.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the event" },
+        "description": { "type": "string", "description": "Detailed description" },
+        "date": { "type": "string", "format": "date-time", "description": "When the event happens" },
+        "location": { "type": "string", "description": "Where the event happens" },
+        "category": { "type": "string", "description": "Category e.g. Workshop, Seminar" },
+        "fee": { "type": "number", "description": "Registration fee" },
+        "capacity": { "type": "number", "description": "Max attendees" },
+        "registeredCount": { "type": "number", "description": "Current number of registrations" },
+        "imageUrl": { "type": "string", "description": "URL to the event banner image" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["title", "date", "location"]
+    },
+    "Registration": {
+      "title": "Registration Definition",
+      "description": "A user's registration for a specific event.",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string", "description": "Reference to the event" },
+        "userId": { "type": "string", "description": "Reference to the user" },
+        "name": { "type": "string", "description": "Full name of the registrant" },
+        "phone": { "type": "string", "description": "Contact phone number" },
+        "college": { "type": "string", "description": "College or institution name" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"], "description": "Current status" },
+        "paymentProofUrl": { "type": "string", "description": "URL to the uploaded receipt/proof" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["eventId", "userId", "name", "phone", "status"]
+    },
+    "User": {
+      "title": "User Definition",
+      "description": "User profile information and role.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Display name" },
+        "email": { "type": "string", "description": "Primary email" },
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "Access level" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Registration date" }
+      },
+      "required": ["email", "role"]
+    },
+    "WishlistItem": {
+      "title": "Wishlist Item Definition",
+      "description": "An event favorited or saved to wishlist by a user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The user keeping this item in wishlist" },
+        "eventId": { "type": "string", "description": "The wishlisted event ID" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When it was added to wishlist" }
+      },
+      "required": ["userId", "eventId"]
+    },
+    "OrganizerRequest": {
+      "title": "Organizer Request Definition",
+      "description": "An inquiry/request by a user to become an event organizer and launch an event.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The user submitting this request" },
+        "name": { "type": "string", "description": "Display name of applicant" },
+        "email": { "type": "string", "description": "Contact email" },
+        "phone": { "type": "string", "description": "Contact phone" },
+        "organizationName": { "type": "string", "description": "Name of the organizing body" },
+        "proposedEventCategory": { "type": "string", "description": "The event category they want to occupy" },
+        "proposedEventTitle": { "type": "string", "description": "Title of original event proposal" },
+        "proposedEventDescription": { "type": "string", "description": "Proposed event details" },
+        "proposedEventFee": { "type": "number", "description": "Proposed ticket cost" },
+        "proposedEventCapacity": { "type": "number", "description": "Proposed event capacity" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"], "description": "Decision state" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When request submitted" }
+      },
+      "required": ["userId", "name", "email", "phone", "organizationName", "proposedEventCategory", "status"]
+    },
+    "CategoryOrganizer": {
+      "title": "Category Organizer Mapping",
+      "description": "The designated event organizer associated with a specific event category.",
+      "type": "object",
+      "properties": {
+        "category": { "type": "string", "description": "Mapped event category name" },
+        "organizationName": { "type": "string", "description": "The approved organizer body name" },
+        "organizerName": { "type": "string", "description": "Contact person name" },
+        "organizerEmail": { "type": "string", "description": "Contact email" },
+        "organizerPhone": { "type": "string", "description": "Contact phone" },
+        "organizerUserId": { "type": "string", "description": "User account ID for payment metrics" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Time of catalog mapping" }
+      },
+      "required": ["category", "organizationName", "organizerEmail"]
+    }
+  },
+  "firestore": {
+    "events": {
+      "schema": "Event",
+      "description": "Collection of all events"
+    },
+    "registrations": {
+      "schema": "Registration",
+      "description": "Collection of all event registrations"
+    },
+    "users": {
+      "schema": "User",
+      "description": "Collection of user profiles"
+    },
+    "wishlists": {
+      "schema": "WishlistItem",
+      "description": "Collection of user wishlist items"
+    },
+    "organizer_requests": {
+      "schema": "OrganizerRequest",
+      "description": "Collection of incoming organizer event proposals"
+    },
+    "category_organizers": {
+      "schema": "CategoryOrganizer",
+      "description": "Collection of active category organizer designations"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Eventra - EventPass App",
+  "description": "A comprehensive ticket booking system with role-based access, event registration with payment proof OCR verification, and digital QR ticket generation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

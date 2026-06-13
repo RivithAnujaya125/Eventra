@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 1. Primitive Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      // Relax email verification check so that email/password users can sign up and book events immediately without needing a verification email link.
+      return isSignedIn();
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 2. Validation Blueprints
+    function isValidEvent(data) {
+      return data.keys().hasAll(['title', 'date', 'location']) &&
+             data.title is string && data.title.size() <= 200 &&
+             data.location is string && data.location.size() <= 200 &&
+             data.date is timestamp;
+    }
+
+    function isValidRegistration(data) {
+      return data.keys().hasAll(['eventId', 'userId', 'name', 'phone', 'status']) &&
+             data.eventId is string && isValidId(data.eventId) &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() <= 100 &&
+             data.phone is string && data.phone.size() <= 20 &&
+             data.status in ['pending', 'approved', 'rejected'];
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'role']) &&
+             data.email is string && data.email.size() <= 100 &&
+             data.role in ['user', 'admin'];
+    }
+
+    // 3. Match Blocks
+    
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && isValidId(eventId) && isValidEvent(incoming());
+    }
+
+    match /registrations/{regId} {
+      allow get: if (isSignedIn() && (isOwner(existing().userId) || isAdmin()));
+      allow list: if (isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()));
+      
+      allow create: if (
+        isEmailVerified() && 
+        isValidId(regId) &&
+        isValidRegistration(incoming()) &&
+        incoming().status == 'pending' &&
+        exists(/databases/$(database)/documents/events/$(incoming().eventId))
+      );
+      
+      allow update: if (
+        isAdmin() && 
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly(['status']) || 
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+        )
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      
+      allow create: if (
+        isEmailVerified() && 
+        isOwner(userId) && 
+        isValidUser(incoming()) && 
+        incoming().role == 'user'
+      );
+      
+      allow update: if (
+        (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name'])) ||
+        isAdmin()
+      );
+    }
+
+    match /wishlists/{wishlistId} {
+      allow get: if isSignedIn() && (isOwner(existing().userId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isEmailVerified() && isValidId(wishlistId) && incoming().userId == request.auth.uid;
+      allow delete: if isSignedIn() && (isOwner(existing().userId) || isAdmin());
+    }
+  }
+}
