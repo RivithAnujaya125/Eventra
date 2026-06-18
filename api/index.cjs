@@ -1,2 +1,2 @@
-const app = require('../dist/server.cjs').default;
+const app = require('../server-build.cjs').default;
 module.exports = app;
